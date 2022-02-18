@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "676923374257",
+    "firebase_url": "https://facerecogauth01-default-rtdb.firebaseio.com",
+    "project_id": "facerecogauth01",
+    "storage_bucket": "facerecogauth01.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:676923374257:android:427dd7c6e28a6947454090",
+        "android_client_info": {
+          "package_name": "com.ict.FaceCheckChic"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "676923374257-fojct88d0aqrlprsbskiqpc27rbrq9dm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBN4LCzL9IDvxLdV7Dq1FXGqjTVpqobDSg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "676923374257-fojct88d0aqrlprsbskiqpc27rbrq9dm.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
