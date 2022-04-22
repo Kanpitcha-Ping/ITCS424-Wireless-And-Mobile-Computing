@@ -70,7 +70,7 @@ class SignUpState extends State<SignUp> {
       showDialog(
         context: context,
         builder: (context) {
-          return AlertDialog(
+          return const AlertDialog(
             content: Text('No face detected!'),
           );
         },
@@ -202,7 +202,7 @@ class SignUpState extends State<SignUp> {
                     );
                   }
                 } else {
-                  return Center(child: CircularProgressIndicator());
+                  return const Center(child: CircularProgressIndicator());
                 }
               },
             ),
@@ -219,6 +219,7 @@ class SignUpState extends State<SignUp> {
                 onPressed: onShot,
                 isLogin: false,
                 reload: _reload,
+                Repo: null,
               )
             : Container());
   }

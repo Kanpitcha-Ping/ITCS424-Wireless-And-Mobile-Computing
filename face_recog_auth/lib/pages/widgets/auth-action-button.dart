@@ -3,6 +3,7 @@ import 'package:face_recog_auth/pages/db/db_firebase.dart';
 import 'package:face_recog_auth/pages/models/user.model.dart';
 import 'package:face_recog_auth/pages/profile.dart';
 import 'package:face_recog_auth/pages/widgets/app_button.dart';
+
 import 'package:face_recog_auth/services/camera.service.dart';
 import 'package:face_recog_auth/services/ml_service.dart';
 import 'package:flutter/material.dart';
@@ -10,12 +11,16 @@ import '../home.dart';
 import 'app_text_field.dart';
 
 class AuthActionButton extends StatefulWidget {
-  AuthActionButton(this._initializeControllerFuture,
-      {Key key, @required this.onPressed, @required this.isLogin, this.reload});
+
+  const AuthActionButton(@required this._initializeControllerFuture,
+      {Key key,@required this.onPressed, @required this.isLogin, this.reload, this.Repo});
   final Future _initializeControllerFuture;
+  //this._initializeControllerFuture,
   final Function onPressed;
   final bool isLogin;
   final Function reload;
+  final List<User> Repo;
+
   @override
   _AuthActionButtonState createState() => _AuthActionButtonState();
 }
@@ -28,8 +33,12 @@ class _AuthActionButtonState extends State<AuthActionButton> {
       TextEditingController(text: '');
   final TextEditingController _passwordTextEditingController =
       TextEditingController(text: '');
+  final TextEditingController _emailTextEditingController =
+  TextEditingController(text: '');
 
   User predictedUser;
+
+  GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
 
   Future _signUp(context) async {
     StudentsRepository _stdRepo = StudentsRepository();
@@ -38,14 +47,13 @@ class _AuthActionButtonState extends State<AuthActionButton> {
     List predictedData = _mlService.predictedData; //modeldata
     String user = _userTextEditingController.text;
     String password = _passwordTextEditingController.text;
-
-    /// creates a new user in the 'database'
-    // await _dataBaseService.saveData(user, password, predictedData);
+    String email = _emailTextEditingController.text;
 
     User userToSave = User(
       user: user,
       password: password,
       modelData: predictedData,
+      email: email,
     );
     await _stdRepo.insert(userToSave);
 
@@ -57,20 +65,21 @@ class _AuthActionButtonState extends State<AuthActionButton> {
 
   Future _signIn(context) async {
     String password = _passwordTextEditingController.text;
-
-    if (this.predictedUser.password == password) {
+    print("come to _signIn");
+    if (predictedUser.password == password) {
+      print("password macth!");
       Navigator.push(
           context,
           MaterialPageRoute(
               builder: (BuildContext context) => Profile(
-                    this.predictedUser.user,
+                    predictedUser,
                     imagePath: _cameraService.imagePath,
                   )));
     } else {
       showDialog(
         context: context,
         builder: (context) {
-          return AlertDialog(
+          return const AlertDialog(
             content: Text('Wrong password!'),
           );
         },
@@ -79,65 +88,78 @@ class _AuthActionButtonState extends State<AuthActionButton> {
   }
 
   Future<User> _predictUser() async {
-    print("may error here");
-    User userAndPass = await _mlService.predict();
-    return userAndPass ?? null;
+    print("_pridictUser: may error here");
+    if (!mounted) print("_pridictUser: unmounted");
+    else print("_pridictUser: mount");
+    //User userAndPass = await _mlService.predict();
+    User userAndPass = await _mlService.predict(widget.Repo);
+    if (!mounted) print("_pridictUser_AF: unmounted");
+    else print("_pridictUser_AF: mount");
+    return userAndPass;
   }
+
+  Future onTap() async {
+    try {
+      // Ensure that the camera is initialized.
+      await widget._initializeControllerFuture;
+      // onShot event (takes the image and predict output)
+      bool faceDetected = await widget.onPressed();
+      print(faceDetected);
+      if (faceDetected) {
+        print("face detected");
+        print(widget.isLogin);
+
+        if (widget.isLogin) {
+
+          // if (!mounted) print("middle: unmounted");
+          // else print("middle: mount");
+
+          //error here it unmount state
+          User user = await _predictUser();
+          // if (!mounted) print("inside0: unmounted");
+          // else print("inside0: mount");
+          print("err here?");
+          if (user != null) {
+            predictedUser = user;
+            print("predictedUser: " + predictedUser.user);
+          }
+          // if (!mounted) print("inside: unmounted");
+          // else print("inside: mount");
+        }
+        PersistentBottomSheetController bottomSheetController = Scaffold.of(context).showBottomSheet((context) => signSheet(context));
+        bottomSheetController.closed.whenComplete(() => widget.reload());
+      }
+    } catch (e) {
+      // If an error occurs, log the error to the console.
+      print("err: face detection");
+      print(e);
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () async {
-        try {
-          // Ensure that the camera is initialized.
-          await widget._initializeControllerFuture;
-          // onShot event (takes the image and predict output)
-          bool faceDetected = await widget.onPressed();
-
-          if (faceDetected) {
-            print("Login: face detected");
-            print(widget.isLogin);
-            if (widget.isLogin) {
-              print("user: ");
-              var user = await _predictUser(); //error here
-              print(user);
-              if (user != null) {
-                this.predictedUser = user;
-                print("predictedUser: ");
-                print(predictedUser);
-              }
-            }
-            PersistentBottomSheetController bottomSheetController =
-                Scaffold.of(context)
-                    .showBottomSheet((context) => signSheet(context));
-
-            bottomSheetController.closed.whenComplete(() => widget.reload());
-          }
-        } catch (e) {
-          // If an error occurs, log the error to the console.
-          print("error: face detection");
-          print(e);
-        }
-      },
+      onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
-          color: Color(0xFF0F0BDB),
+          color: const Color(0xFF0F0BDB),
           boxShadow: <BoxShadow>[
             BoxShadow(
               color: Colors.blue.withOpacity(0.1),
               blurRadius: 1,
-              offset: Offset(0, 2),
+              offset: const Offset(0, 2),
             ),
           ],
         ),
         alignment: Alignment.center,
-        padding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
         width: MediaQuery.of(context).size.width * 0.8,
         height: 60,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: [
+          children: const [
             Text(
               'CAPTURE',
               style: TextStyle(color: Colors.white),
@@ -152,9 +174,10 @@ class _AuthActionButtonState extends State<AuthActionButton> {
     );
   }
 
-  signSheet(context) {
+
+  signSheet(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(20),
+      padding: const EdgeInsets.all(20),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -163,12 +186,12 @@ class _AuthActionButtonState extends State<AuthActionButton> {
               ? Container(
                   child: Text(
                     'Welcome back, ' + predictedUser.user + '.',
-                    style: TextStyle(fontSize: 20),
+                    style: const TextStyle(fontSize: 20),
                   ),
                 )
               : widget.isLogin
                   ? Container(
-                      child: Text(
+                      child: const Text(
                       'User not found 😞',
                       style: TextStyle(fontSize: 20),
                     ))
@@ -191,15 +214,22 @@ class _AuthActionButtonState extends State<AuthActionButton> {
                         isPassword: true,
                       ),
                 SizedBox(height: 10),
+                !widget.isLogin
+                    ? AppTextField(
+                        controller: _emailTextEditingController,
+                        labelText: "Email",
+                      )
+                    : Container(),
+                SizedBox(height: 10),
                 Divider(),
                 SizedBox(height: 10),
                 widget.isLogin && predictedUser != null
                     ? AppButton(
                         text: 'LOGIN',
                         onPressed: () async {
-                          _signIn(context);
+                          await _signIn(context);
                         },
-                        icon: Icon(
+                        icon: const Icon(
                           Icons.login,
                           color: Colors.white,
                         ),
@@ -210,7 +240,7 @@ class _AuthActionButtonState extends State<AuthActionButton> {
                             onPressed: () async {
                               await _signUp(context);
                             },
-                            icon: Icon(
+                            icon: const Icon(
                               Icons.person_add,
                               color: Colors.white,
                             ),

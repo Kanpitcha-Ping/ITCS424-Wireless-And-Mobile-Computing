@@ -12,10 +12,11 @@ import 'package:image/image.dart' as imglib;
 class MLService {
 
   Interpreter _interpreter;
-  double threshold = 0.5;
+  double threshold = 0.6;
 
-  List _predictedData;
+  List _predictedData = [];
   List get predictedData => _predictedData;
+  List<User> Repo = [];
 
   Future loadModel() async {
     Delegate delegate;
@@ -45,7 +46,10 @@ class MLService {
     }
   }
 
-  setCurrentPrediction(CameraImage cameraImage, Face face) {
+  void setCurrentPrediction(CameraImage cameraImage, Face face) {
+    if (_interpreter == null) throw Exception('Interpreter is null');
+    if (face == null) throw Exception('Face is null');
+
     List input = _preProcess(cameraImage, face);
 
     input = input.reshape([1, 112, 112, 3]);
@@ -57,9 +61,23 @@ class MLService {
     this._predictedData = List.from(output);
   }
 
-  Future<User> predict() async {
+  // fetchDB() async {
+  //   dynamic usersList = await StudentsRepository().queryAllUsers();
+  //   if (usersList == null) {
+  //     print("Cannot fetch db");
+  //   } else {
+  //     Repo = usersList;
+  //     print("Repo: " + Repo.isNotEmpty.toString());
+  //   }
+  // }
+
+  Future<User> predict(List<User> repo) async {
     print("ML_service: get in to predict()");
-    return _searchResult(this._predictedData);
+    this.Repo = repo;
+    // await fetchDB();
+    // print("fecth db!");
+    // print("after fetching: " + Repo.isNotEmpty.toString());
+    return await _searchResult(_predictedData); //potential unmount problem
   }
 
   List _preProcess(CameraImage image, Face faceDetected) {
@@ -104,26 +122,34 @@ class MLService {
 
   Future<User> _searchResult(List predictedData) async {
     print("ML_service: get in to searchResult");
-    StudentsRepository _stdRepo = StudentsRepository();
+    // StudentsRepository _stdRepo = StudentsRepository();
+    // List<User> users = await _stdRepo.queryAllUsers(); //err here
+    print(Repo); //potential unmount problem
 
-    List<User> users = await _stdRepo.queryAllUsers(); //err here
-    print(users);
     double minDist = 999;
     double currDist = 0.0;
     User predictedResult;
 
-    for (User u in users) {
-      print(u.modelData);
-      currDist = _euclideanDistance(u.modelData, predictedData);
+    for (User u in Repo) {
+      print("ml_service (u): " + u.getUsername());
+      currDist = await _euclideanDistance(u.modelData, predictedData);
+      print("euc distance: " + currDist.toString());
+      print("th" + threshold.toString());
+      print("minDist: " + minDist.toString());
       if (currDist <= threshold && currDist < minDist) {
+        print("ml_service: found match user");
         minDist = currDist;
         predictedResult = u;
       }
     }
+    //print("ml_service (user): " + predictedResult.getUsername());
     return predictedResult;
   }
 
-  double _euclideanDistance(List e1, List e2) {
+  Future<double> _euclideanDistance(List e1, List e2) async {
+    print("ml_service: euc");
+    print(e1);
+    print(e2);
     if (e1 == null || e2 == null) throw Exception("Null argument");
 
     double sum = 0.0;
@@ -137,7 +163,5 @@ class MLService {
     this._predictedData = value;
   }
 
-  dispose() {
-    
-  }
+  dispose() {}
 }

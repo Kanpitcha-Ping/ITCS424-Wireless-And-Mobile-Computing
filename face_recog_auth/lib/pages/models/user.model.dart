@@ -1,33 +1,36 @@
-import 'dart:convert';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class User {
   String user;
   String password;
   List modelData;
+  String email;
 
   User({
     this.user,
     this.password,
     this.modelData,
+    this.email
   });
 
-  /*static List<User> fromMap(QuerySnapshot querySnapshot) {
-    List<User> users;
-    querySnapshot.docs.forEach((u) {
-      print(u["user"] + " "+ u["modeldata"].runtimeType);
-      print(u["user"] + " "+ u["modeldata"]);
-      users.add(new User(user: u["user"], password: u["password"], modelData: u["modeldata"]));
-    });
-    return users;
-  }*/
+  String getUsername() {
+    return user;
+  }
+
+  static User fromMap(Map<String, dynamic> user) {
+    return User(
+      user: user['user'],
+      password: user['password'],
+      modelData: user['modeldata'],
+      email: user['email'],
+    );
+  }
 
   toMap() {
     return {
       'user': user,
       'password': password,
       'modeldata': modelData,
+      'email': email
     };
   }
 }

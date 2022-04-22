@@ -1,143 +1,371 @@
 import 'dart:io';
-
+import 'package:face_recog_auth/pages/db/db_firebase.dart';
+import 'package:face_recog_auth/pages/models/attendance.model.dart';
 import 'package:face_recog_auth/pages/widgets/app_button.dart';
 import 'package:flutter/material.dart';
+import 'package:face_recog_auth/pages/history.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'home.dart';
+import 'models/course.model.dart';
+import 'models/user.model.dart';
 
-class Profile extends StatelessWidget {
-  const Profile(this.username, {Key key, this.imagePath}) : super(key: key);
-  final String username;
+
+class Profile extends StatefulWidget {
+
+  final User _user;
   final String imagePath;
+  const Profile(this._user, {Key key, @required this.imagePath}) : super(key: key);
 
-  final String githubURL =
-      "https://github.com/MCarlomagno/FaceRecognitionAuth/tree/master";
+  //const Profile({Key key}): super(key: key);
 
-  void _launchURL() async => await canLaunch(githubURL)
-      ? await launch(githubURL)
-      : throw 'Could not launch $githubURL';
+
+  @override
+  _MyProfile createState() => _MyProfile();
+}
+
+class _MyProfile extends State<Profile> {
+
+  final String _user = "Ping";
+  final String imagePath = "";
+
+  List<Course> todayCourses = [];
+  String _c;
+  bool isChecked = false;
+  bool isAbsent = false;
+
+  bool dropdown = false;
+
+  Future getCoursesToday() async {
+    print("today: " + DateTime.now().weekday.toString());
+    dynamic coursesList = await StudentsRepository().getAllCourses(DateTime.now().weekday);
+    if (coursesList == null) {
+      print("Cannot fetch db");
+    } else {
+      todayCourses = coursesList;
+      print("Course today: " + todayCourses.isNotEmpty.toString());
+    }
+  }
+
+  // Future addCourse() async {
+  //   TimeOfDay open = const TimeOfDay(hour: 1, minute: 30);
+  //   TimeOfDay close = const TimeOfDay(hour: 4, minute: 0);
+  //   print("open:" + open.hour.toString());
+  //   print("close: " + close.hour.toString());
+  //   Course course = Course(courseName: "Wireless And Mobile Computing", day: DateTime.now().weekday, openTime: open, closeTime: close);
+  //   print(course.courseName);
+  //   try {
+  //     await StudentsRepository().insertCourse(course);
+  //   } catch (e) {
+  //     print("cannot add course" + e.toString());
+  //   }
+  // }
+
+  @override
+  void initState() {
+    super.initState();
+    //addCourse();
+    getCoursesToday();
+  }
+
+  Future markPresent() async {
+    print(DateTime.now());
+    Attendance a = Attendance(username: widget._user.user, course: _c, timestamp: DateTime.now(), status: "present");
+    await StudentsRepository().checkAttendance(a);
+    setState(() {
+      isChecked = !isChecked;
+    });
+    showDialog(
+      context: context,
+      builder: (context) {
+        return const AlertDialog(
+          content: Text('Sucessfully Check!'),
+        );
+      },
+    );
+  }
+
+  Future markAbsent() async {
+    print(DateTime.now());
+    Attendance a = Attendance(username: widget._user.user, course: _c, timestamp: DateTime.now(), status: "absent");
+    await StudentsRepository().checkAttendance(a);
+    setState(() {
+      isAbsent = !isAbsent;
+    });
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return const AlertDialog(
+          content: Text('Absent!'),
+        );
+      },
+    );
+  }
+
+  // Future _attendance(context) async {
+  //     Navigator.push(
+  //         context,
+  //         MaterialPageRoute(
+  //             builder: (BuildContext context) => History(widget._user.user, _c)));
+  // }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        leading: const Icon(FontAwesomeIcons.home, color: const Color(0xFF8A8CC0),),
+        title: Center(child: Image.asset('assets/facecheckchic.png', width: 200, fit: BoxFit.fitWidth)),
+        backgroundColor: Colors.white,
+        elevation: 0,
+      ),
       body: SafeArea(
-        child: Container(
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      color: Colors.black,
-                      image: DecorationImage(
-                        fit: BoxFit.cover,
-                        image: FileImage(File(imagePath)),
-                      ),
-                    ),
-                    margin: EdgeInsets.all(20),
-                    width: 50,
-                    height: 50,
-                    // child: Transform(
-                    //     alignment: Alignment.center,
-                    //     child: FittedBox(
-                    //       fit: BoxFit.cover,
-                    //       child: Image.file(File(imagePath)),
-                    //     ),
-                    //     transform: Matrix4.rotationY(mirror)),
-                  ),
-                  Text(
-                    'Hi ' + username + '!',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
-                  ),
-                ],
-              ),
-              Container(
-                margin: EdgeInsets.all(20),
-                padding: EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Color(0xFFFEFFC1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Column(
+        child: SingleChildScrollView(
+          child: Container(
+            margin: const EdgeInsets.all(20),
+            height: MediaQuery.of(context).size.height*1,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(
-                      Icons.warning_amber_outlined,
-                      size: 30,
+                    Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(100),
+                        color: Colors.black,
+                        image: DecorationImage(
+                          fit: BoxFit.cover,
+                          // image: FileImage(File(imagePath)),
+                          image: FileImage(File(widget.imagePath)),
+                        ),
+                      ),
+                      width: 50,
+                      height: 50,
                     ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    Text(
-                      '''If you think this project seems interesting and you want to contribute or need some help implementing it, dont hesitate and lets get in touch!''',
-                      style: TextStyle(fontSize: 16),
-                      textAlign: TextAlign.left,
-                    ),
-                    Divider(
-                      height: 30,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget._user.user,
+                          //_user,
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+                        ),
+                        Text(
+                          widget._user.email,
+                          //_user,
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
+                        ),
+                      ],
                     ),
                     InkWell(
-                      onTap: _launchURL,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => MyHomePage()),
+                        );},
                       child: Container(
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          color: Colors.black,
-                          boxShadow: <BoxShadow>[
-                            BoxShadow(
-                              color: Colors.blue.withOpacity(0.1),
-                              blurRadius: 1,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
+                          borderRadius: BorderRadius.circular(30),
+                          color: const Color(0xFF8A8CC0),
                         ),
-                        alignment: Alignment.center,
-                        padding:
-                            EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-                        width: MediaQuery.of(context).size.width * 0.8,
+                        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+                        //width: MediaQuery.of(context).size.width * 0.3,
+                        //height: MediaQuery.of(context).size.height*0.05,
+                        //height: 60,
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'CONTRIBUTE',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            SizedBox(
-                              width: 10,
-                            ),
-                            FaIcon(
-                              FontAwesomeIcons.github,
-                              color: Colors.white,
-                            )
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: const [
+                            Text('LOG OUT ', style: TextStyle(fontSize: 10, color: Colors.white),),
+                            Icon(Icons.logout,color: Colors.white),
                           ],
                         ),
                       ),
                     ),
                   ],
                 ),
-              ),
-              Spacer(),
-              AppButton(
-                text: "LOG OUT",
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => MyHomePage()),
-                  );
-                },
-                icon: Icon(
-                  Icons.logout,
-                  color: Colors.white,
+                const SizedBox(height: 40),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Hi, ' + widget._user.user + '.',
+                      style: const TextStyle(fontSize: 30, fontWeight: FontWeight.w700, color: Color(0xFF8A8CC0)),
+                    ),
+                    const Text(
+                      'Welcome To Your Class',
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: Color(0xFFF0B2AF)),
+                    ),
+                  ],
                 ),
-                color: Color(0xFFFF6161),
-              ),
-              SizedBox(
-                height: 20,
-              )
-            ],
+                const SizedBox(height: 40),
+                //Today class
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: const [
+                    Text(
+                      'Today\'s Classes',
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
+                    ),
+                    Icon(FontAwesomeIcons.caretDown , color: Color(0xFF8A8CC0)),
+                  ],
+                ),
+                const SizedBox(height: 15),
+                Container(
+                      padding: const EdgeInsets.all(5),
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(10),
+                          gradient: LinearGradient(
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                              colors: [
+                                const Color(0xFFFF0099).withOpacity(0.28),
+                                const Color(0xFF0085FF).withOpacity(0.28),
+                              ]
+                          )
+                      ),
+                      child: Expanded(
+                        child: SizedBox(
+                          height: MediaQuery.of(context).size.height*0.2,
+                          child: ListView.builder(
+                            itemCount: todayCourses.length,
+                            itemBuilder: (BuildContext context, int index) {
+                              return GestureDetector(
+                                  child: builtCourse(todayCourses[index]),
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                //const Spacer(),
+                SizedBox(height: 15,),
+                Container(
+                  //margin: const EdgeInsets.all(20),
+                  //padding: const EdgeInsets.all(20),
+                  width: MediaQuery.of(context).size.width * 0.8,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Attendance History',
+                        style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
+                      ),
+                      // InkWell(
+                      //   onTap: () {
+                      //     print("tab");
+                      //     Navigator.push(
+                      //         context,
+                      //         MaterialPageRoute(
+                      //             builder: (BuildContext context) => History(widget._user.user, _c)));
+                      //   },
+                      //   child: Icon(FontAwesomeIcons.caretRight , color: const Color(0xFF8A8CC0)),
+                      // ),
+                      Icon(FontAwesomeIcons.caretRight , color: const Color(0xFF8A8CC0)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
+
+  Widget builtCourse(Course c) {
+    _c = c.courseName;
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        color: Colors.white,
+      ),
+      child: Row(
+        children: [
+          Image.asset('assets/w.png', width: 38, fit: BoxFit.fitWidth),
+          SizedBox(width: 6,),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _c,
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF8A8CC0)),
+                  ),
+                  SizedBox(width: 10,),
+                  Text(
+                    TimeOfDay.now().hour.toString() + ":" + c.getMin(TimeOfDay.now()),
+                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: Color(0xFF8A8CC0)),
+                  ),
+                ],
+              ),
+              SizedBox(height: 4,),
+              c.isValidTime() && !isChecked && !isAbsent
+                ? Row(
+                  //mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    InkWell(
+                      onTap: markPresent,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(30),
+                          color: const Color(0xFF56C6C2),
+                        ),
+                        alignment: Alignment.center,
+                        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                        width: MediaQuery.of(context).size.width * 0.2,
+                        //height: MediaQuery.of(context).size.height*0.05,
+                        //height: 60,
+                        child: const Text('Present', style: TextStyle(fontSize: 10, color: Colors.white),),
+                      ),
+                    ),
+                    SizedBox(width: 15,),
+                    InkWell(
+                      onTap: markAbsent,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(30),
+                          color: const Color(0xFFDD219A),
+                        ),
+                        alignment: Alignment.center,
+                        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                        width: MediaQuery.of(context).size.width * 0.2,
+                        //height: MediaQuery.of(context).size.height*0.05,
+                        child: const Text('Absent', style: TextStyle(fontSize: 10, color: Colors.white),),
+                      ),
+                    ),
+                  ],
+                )
+                : isChecked
+                  ? Row(
+                      children: const [
+                        Text('You are marked ', style: TextStyle(fontSize: 12, color: Colors.black),),
+                        Text('PRESENT', style: TextStyle(fontSize: 12, color: Color(0xFF56C6C2), fontWeight: FontWeight.w600),)
+                      ],
+                    )
+                  : isAbsent
+                    ? Row(
+                        children: const [
+                          Text('You are marked ', style: TextStyle(fontSize: 12, color: Colors.black),),
+                          Text('ADSENT', style: TextStyle(fontSize: 12, color: Color(0xFF56C6C2), fontWeight: FontWeight.w600),)
+                        ],
+                      )
+                    : !c.isValidTime() && !isChecked
+                        ? Row(
+                            children: const [
+                              Text('You are late and marked ', style: TextStyle(fontSize: 12, color: Colors.black),),
+                              Text('ABSENT ', style: TextStyle(fontSize: 12, color: Color(0xFF56C6C2), fontWeight: FontWeight.w600),)
+                            ],
+                          )
+                        : const Text('Not available', style: TextStyle(fontSize: 12, color: const Color(0xFF56C6C2), fontWeight: FontWeight.w600),)
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
 }

@@ -1,53 +1,71 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:face_recog_auth/locator.dart';
+import 'package:face_recog_auth/pages/models/user.model.dart';
 import 'package:face_recog_auth/pages/widgets/FacePainter.dart';
 import 'package:face_recog_auth/pages/widgets/auth-action-button.dart';
 import 'package:face_recog_auth/pages/widgets/camera_header.dart';
 import 'package:face_recog_auth/services/camera.service.dart';
 import 'package:face_recog_auth/services/ml_service.dart';
 import 'package:face_recog_auth/services/face_detector_service.dart';
+import 'package:face_recog_auth/pages/db/db_firebase.dart';
 import 'package:camera/camera.dart';
 import 'package:google_ml_kit/google_ml_kit.dart';
 import 'package:flutter/material.dart';
+
 import 'dart:math' as math;
+
 
 class SignIn extends StatefulWidget {
   final CameraDescription cameraDescription;
 
-  const SignIn({
-    Key key,
-    @required this.cameraDescription,
-  }) : super(key: key);
+  const SignIn({Key key, @required this.cameraDescription}) : super(key: key);
 
   @override
   SignInState createState() => SignInState();
 }
 
 class SignInState extends State<SignIn> {
-  CameraService _cameraService = locator<CameraService>();
-  FaceDetectorService _faceDetectorService = locator<FaceDetectorService>();
-  MLService _mlService = locator<MLService>();
+  String imagePath;
+  Face faceDetected;
+  Size imageSize;
 
-  Future _initializeControllerFuture;
-
-  bool cameraInitializated = false;
   bool _detectingFaces = false;
   bool pictureTaked = false;
+
+  Future _initializeControllerFuture;
+  bool cameraInitializated = false;
 
   // switchs when the user press the camera
   bool _saving = false;
   bool _bottomSheetVisible = false;
 
-  String imagePath;
-  Size imageSize;
-  Face faceDetected;
+  // service injection
+  FaceDetectorService _faceDetectorService = locator<FaceDetectorService>();
+  CameraService _cameraService = locator<CameraService>();
+  MLService _mlService = locator<MLService>();
+
+  //Database
+  List<User> _Repo = [];
+
+  Future getUserRepo() async {
+    dynamic usersList = await StudentsRepository().queryAllUsers();
+    if (usersList == null) {
+      print("Cannot fetch db");
+    } else {
+      _Repo = usersList;
+      print("Repo: " + _Repo.isNotEmpty.toString());
+    }
+  }
+
 
   @override
   void initState() {
     super.initState();
     _start();
+    getUserRepo();
   }
+
 
   @override
   void dispose() {
@@ -57,16 +75,44 @@ class SignInState extends State<SignIn> {
     super.dispose();
   }
 
-  _start() async {
+  Future _start() async {
     _initializeControllerFuture =
         _cameraService.startService(widget.cameraDescription);
     await _initializeControllerFuture;
-
     setState(() {
       cameraInitializated = true;
     });
-
     _frameFaces();
+
+  }
+
+  Future<void> onShot() async {
+    if (faceDetected == null) {
+      showDialog(
+        context: context,
+        builder: (context) {
+          return const AlertDialog(
+            content: Text('No face detected!'),
+          );
+        },
+      );
+      return false;
+    } else {
+      _saving = true;
+
+      await Future.delayed(Duration(milliseconds: 500));
+      await _cameraService.cameraController.stopImageStream();
+      await Future.delayed(Duration(milliseconds: 200));
+      XFile file = await _cameraService.takePicture();
+      imagePath = file.path;
+
+      setState(() {
+        _bottomSheetVisible = true;
+        pictureTaked = true;
+      });
+
+      return true;
+    }
   }
 
   _frameFaces() {
@@ -104,36 +150,6 @@ class SignInState extends State<SignIn> {
         }
       }
     });
-  }
-
-  Future<void> onShot() async {
-    if (faceDetected == null) {
-      showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            content: Text('No face detected!'),
-          );
-        },
-      );
-
-      return false;
-    } else {
-      _saving = true;
-
-      await Future.delayed(Duration(milliseconds: 500));
-      await _cameraService.cameraController.stopImageStream();
-      await Future.delayed(Duration(milliseconds: 200));
-      XFile file = await _cameraService.takePicture();
-
-      setState(() {
-        _bottomSheetVisible = true;
-        pictureTaked = true;
-        imagePath = file.path;
-      });
-
-      return true;
-    }
   }
 
   _onBackPressed() {
@@ -222,8 +238,8 @@ class SignInState extends State<SignIn> {
               onPressed: onShot,
               isLogin: true,
               reload: _reload,
+              Repo: _Repo,
             )
-          : Container(),
-    );
+          : Container());
   }
 }

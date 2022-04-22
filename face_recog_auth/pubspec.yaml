@@ -74,6 +74,14 @@ flutter:
   assets:
     - assets/mobilefacenet.tflite
     - assets/logo.png
+    - assets/facecheckchic.png
+    - assets/purelogo.png
+    - assets/w.png
+#    - assets/key.png
+#    - assets/register.png
+#    - assets/signout.png
+#    - assets/signin.png
+#    - assets/icon_success.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.
