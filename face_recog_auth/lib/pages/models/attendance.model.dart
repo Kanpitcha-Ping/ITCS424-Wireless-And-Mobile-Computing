@@ -3,7 +3,7 @@ class Attendance {
 
   String username;
   String course;
-  DateTime timestamp;
+  String timestamp;
   String status;
   //String datetime = DateTime.now().toString();
 

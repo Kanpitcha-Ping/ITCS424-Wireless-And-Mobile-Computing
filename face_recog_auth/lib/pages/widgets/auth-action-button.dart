@@ -88,13 +88,7 @@ class _AuthActionButtonState extends State<AuthActionButton> {
   }
 
   Future<User> _predictUser() async {
-    print("_pridictUser: may error here");
-    if (!mounted) print("_pridictUser: unmounted");
-    else print("_pridictUser: mount");
-    //User userAndPass = await _mlService.predict();
     User userAndPass = await _mlService.predict(widget.Repo);
-    if (!mounted) print("_pridictUser_AF: unmounted");
-    else print("_pridictUser_AF: mount");
     return userAndPass;
   }
 
@@ -110,28 +104,16 @@ class _AuthActionButtonState extends State<AuthActionButton> {
         print(widget.isLogin);
 
         if (widget.isLogin) {
-
-          // if (!mounted) print("middle: unmounted");
-          // else print("middle: mount");
-
-          //error here it unmount state
           User user = await _predictUser();
-          // if (!mounted) print("inside0: unmounted");
-          // else print("inside0: mount");
-          print("err here?");
           if (user != null) {
             predictedUser = user;
             print("predictedUser: " + predictedUser.user);
           }
-          // if (!mounted) print("inside: unmounted");
-          // else print("inside: mount");
         }
         PersistentBottomSheetController bottomSheetController = Scaffold.of(context).showBottomSheet((context) => signSheet(context));
         bottomSheetController.closed.whenComplete(() => widget.reload());
       }
     } catch (e) {
-      // If an error occurs, log the error to the console.
-      print("err: face detection");
       print(e);
     }
   }

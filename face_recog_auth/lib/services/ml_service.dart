@@ -71,14 +71,10 @@ class MLService {
   //   }
   // }
 
-  Future<User> predict(List<User> repo) async {
-    print("ML_service: get in to predict()");
-    this.Repo = repo;
-    // await fetchDB();
-    // print("fecth db!");
-    // print("after fetching: " + Repo.isNotEmpty.toString());
-    return await _searchResult(_predictedData); //potential unmount problem
-  }
+  // Future<User> predict(List<User> repo) async {
+  //   this.Repo = repo;
+  //   return await _searchResult(_predictedData); //potential unmount problem
+  // }
 
   List _preProcess(CameraImage image, Face faceDetected) {
     imglib.Image croppedImage = _cropFace(image, faceDetected);
@@ -120,38 +116,27 @@ class MLService {
     return convertedBytes.buffer.asFloat32List();
   }
 
-  Future<User> _searchResult(List predictedData) async {
-    print("ML_service: get in to searchResult");
-    // StudentsRepository _stdRepo = StudentsRepository();
-    // List<User> users = await _stdRepo.queryAllUsers(); //err here
-    print(Repo); //potential unmount problem
+  Future<User> predict(List<User> repo) async {
+    this.Repo = repo;
+    return await _searchResult(_predictedData); //potential unmount problem
+  }
 
+  Future<User> _searchResult(List predictedData) async {
     double minDist = 999;
     double currDist = 0.0;
     User predictedResult;
-
     for (User u in Repo) {
-      print("ml_service (u): " + u.getUsername());
       currDist = await _euclideanDistance(u.modelData, predictedData);
-      print("euc distance: " + currDist.toString());
-      print("th" + threshold.toString());
-      print("minDist: " + minDist.toString());
       if (currDist <= threshold && currDist < minDist) {
-        print("ml_service: found match user");
         minDist = currDist;
         predictedResult = u;
       }
     }
-    //print("ml_service (user): " + predictedResult.getUsername());
     return predictedResult;
   }
 
   Future<double> _euclideanDistance(List e1, List e2) async {
-    print("ml_service: euc");
-    print(e1);
-    print(e2);
     if (e1 == null || e2 == null) throw Exception("Null argument");
-
     double sum = 0.0;
     for (int i = 0; i < e1.length; i++) {
       sum += pow((e1[i] - e2[i]), 2);

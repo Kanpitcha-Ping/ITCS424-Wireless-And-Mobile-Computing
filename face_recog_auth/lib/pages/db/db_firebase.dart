@@ -90,7 +90,7 @@ class StudentsRepository {
       });
       return courses;
     } catch (e) {
-      print("cannot retrieve course today");
+      print("cannot retrieve all courses");
       print(e.toString());
       return [];
     }
@@ -102,14 +102,29 @@ class StudentsRepository {
       await collectionAttendance.get().then((QuerySnapshot snapshot) =>
       {
         snapshot.docs.forEach((a) {
-          atd.add(Attendance(username: a["user"], course: a["course"], timestamp: a["checkedTime"], status: a["status"]));
+          atd.add(Attendance(
+              username: a["user"],
+              course: a["course"],
+              timestamp: a["checkedTime"],
+              status: a["status"]));
         })
       });
       return atd;
     } catch (e) {
-      print("cannot retrieve course today");
+      print("cannot retrieve attendance");
       print(e.toString());
     }
   }
 
 }
+
+
+
+
+
+
+
+
+
+
+

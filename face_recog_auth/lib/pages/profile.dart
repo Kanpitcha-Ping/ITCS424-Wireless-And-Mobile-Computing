@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:face_recog_auth/pages/db/db_firebase.dart';
 import 'package:face_recog_auth/pages/models/attendance.model.dart';
-import 'package:face_recog_auth/pages/widgets/app_button.dart';
 import 'package:flutter/material.dart';
 import 'package:face_recog_auth/pages/history.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
@@ -16,23 +15,16 @@ class Profile extends StatefulWidget {
   final String imagePath;
   const Profile(this._user, {Key key, @required this.imagePath}) : super(key: key);
 
-  //const Profile({Key key}): super(key: key);
-
-
   @override
   _MyProfile createState() => _MyProfile();
 }
 
 class _MyProfile extends State<Profile> {
 
-  final String _user = "Ping";
-  final String imagePath = "";
-
   List<Course> todayCourses = [];
   String _c;
   bool isChecked = false;
   bool isAbsent = false;
-
   bool dropdown = false;
 
   Future getCoursesToday() async {
@@ -69,7 +61,7 @@ class _MyProfile extends State<Profile> {
 
   Future markPresent() async {
     print(DateTime.now());
-    Attendance a = Attendance(username: widget._user.user, course: _c, timestamp: DateTime.now(), status: "present");
+    Attendance a = Attendance(username: widget._user.user, course: _c, timestamp: DateTime.now().toString(), status: "present");
     await StudentsRepository().checkAttendance(a);
     setState(() {
       isChecked = !isChecked;
@@ -86,7 +78,7 @@ class _MyProfile extends State<Profile> {
 
   Future markAbsent() async {
     print(DateTime.now());
-    Attendance a = Attendance(username: widget._user.user, course: _c, timestamp: DateTime.now(), status: "absent");
+    Attendance a = Attendance(username: widget._user.user, course: _c, timestamp: DateTime.now().toString(), status: "absent");
     await StudentsRepository().checkAttendance(a);
     setState(() {
       isAbsent = !isAbsent;
@@ -102,12 +94,6 @@ class _MyProfile extends State<Profile> {
     );
   }
 
-  // Future _attendance(context) async {
-  //     Navigator.push(
-  //         context,
-  //         MaterialPageRoute(
-  //             builder: (BuildContext context) => History(widget._user.user, _c)));
-  // }
 
   @override
   Widget build(BuildContext context) {
@@ -148,12 +134,10 @@ class _MyProfile extends State<Profile> {
                       children: [
                         Text(
                           widget._user.user,
-                          //_user,
                           style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
                         ),
                         Text(
                           widget._user.email,
-                          //_user,
                           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
                         ),
                       ],
@@ -224,7 +208,7 @@ class _MyProfile extends State<Profile> {
                               ]
                           )
                       ),
-                      child: Expanded(
+                      //child: Expanded(
                         child: SizedBox(
                           height: MediaQuery.of(context).size.height*0.2,
                           child: ListView.builder(
@@ -236,7 +220,7 @@ class _MyProfile extends State<Profile> {
                             },
                           ),
                         ),
-                      ),
+                      //),
                     ),
                 //const Spacer(),
                 SizedBox(height: 15,),
@@ -251,17 +235,17 @@ class _MyProfile extends State<Profile> {
                         'Attendance History',
                         style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
                       ),
-                      // InkWell(
-                      //   onTap: () {
-                      //     print("tab");
-                      //     Navigator.push(
-                      //         context,
-                      //         MaterialPageRoute(
-                      //             builder: (BuildContext context) => History(widget._user.user, _c)));
-                      //   },
-                      //   child: Icon(FontAwesomeIcons.caretRight , color: const Color(0xFF8A8CC0)),
-                      // ),
-                      Icon(FontAwesomeIcons.caretRight , color: const Color(0xFF8A8CC0)),
+                      InkWell(
+                        onTap: () {
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (BuildContext context) => History(widget._user.user, _c)));
+                        },
+                        child: Icon(FontAwesomeIcons.caretRight , color: const Color(0xFF8A8CC0)),
+                      ),
+                      SizedBox(width: 3,),
+                      //Icon(FontAwesomeIcons.caretRight , color: const Color(0xFF8A8CC0)),
                     ],
                   ),
                 ),
@@ -350,14 +334,14 @@ class _MyProfile extends State<Profile> {
                     ? Row(
                         children: const [
                           Text('You are marked ', style: TextStyle(fontSize: 12, color: Colors.black),),
-                          Text('ADSENT', style: TextStyle(fontSize: 12, color: Color(0xFF56C6C2), fontWeight: FontWeight.w600),)
+                          Text('ADSENT', style: TextStyle(fontSize: 12, color: Colors.red, fontWeight: FontWeight.w600),)
                         ],
                       )
                     : !c.isValidTime() && !isChecked
                         ? Row(
                             children: const [
                               Text('You are late and marked ', style: TextStyle(fontSize: 12, color: Colors.black),),
-                              Text('ABSENT ', style: TextStyle(fontSize: 12, color: Color(0xFF56C6C2), fontWeight: FontWeight.w600),)
+                              Text('ABSENT ', style: TextStyle(fontSize: 12, color: Colors.red, fontWeight: FontWeight.w600),)
                             ],
                           )
                         : const Text('Not available', style: TextStyle(fontSize: 12, color: const Color(0xFF56C6C2), fontWeight: FontWeight.w600),)
